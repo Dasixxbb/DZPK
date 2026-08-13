@@ -1,0 +1,19 @@
+ws:
+  url: http://localhost:3000
+
+socket:
+  reconnectionDelayMs: 1000
+  reconnectionDelayMaxMs: 5000
+  heartbeatIntervalMs: 25000
+
+lobby:
+  refreshIntervalMs: 3000
+
+ui:
+  toastDurationMs: 3000
+  nicknameMaxLength: 20
+
+room:
+  playerActionSeconds: 120
+  stateRetryDelayMs: 200
+  reconnectGraceSeconds: 20

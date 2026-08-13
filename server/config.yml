@@ -1,0 +1,19 @@
+server:
+  port: 3000
+
+rooms:
+  totalRooms: 10
+
+player:
+  defaultScore: 500
+  maxNicknameLength: 20
+
+heartbeat:
+  timeoutMs: 60000
+
+timeouts:
+  actionMs: 120000
+  smallBlindDeclareMs: 120000
+  showdownSelectMs: 120000
+  reconnectGraceMs: 20000
+  readyMs: 20000
