@@ -2,7 +2,7 @@
   <div class="lobby-page">
     <div class="lobby-header">
       <div class="header-left">
-        <h1 class="title">局域网德州扑克平台</h1>
+        <h1 class="title">BUPT-北扑</h1>
       </div>
       <div class="header-right">
         <div class="player-info">
