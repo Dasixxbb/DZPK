@@ -1,5 +1,5 @@
 ws:
-  url: http://localhost:3000
+  url: http://20.11.12.159:3000
 
 socket:
   reconnectionDelayMs: 1000

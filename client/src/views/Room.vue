@@ -2,6 +2,16 @@
   <div class="room-page">
     <div class="room-header">
       <div class="header-left">
+        <button
+          class="btn-rules"
+          type="button"
+          @click="toggleRulesPanel"
+          :aria-expanded="rulesOpen"
+          title="查看牌型与玩法说明"
+        >
+          <span class="btn-rules-icon">?</span>
+          <span>说明</span>
+        </button>
         <button class="btn-back" @click="goBackToLobby">← 返回大厅</button>
         <span class="room-id-label">房间 #{{ roomState?.roomId ?? roomId }}</span>
         <span v-if="roomState" class="mode-tag" :class="roomState.mode === 'wild' ? 'mode-wild' : 'mode-classic'">
@@ -15,9 +25,134 @@
       </div>
     </div>
 
+    <div v-if="rulesOpen" class="rules-panel" @click.self="rulesOpen = false">
+      <div class="rules-panel-card" @click.stop>
+        <div class="rules-panel-head">
+          <span class="rules-panel-title">游戏规则说明</span>
+          <button
+            class="rules-panel-close"
+            type="button"
+            @click="rulesOpen = false"
+            aria-label="关闭说明"
+          >✕</button>
+        </div>
+        <div class="rules-panel-body">
+
+          <section class="rules-section">
+            <h3 class="rules-section-title">一、牌型大小（从大到小）</h3>
+            <ol class="hand-rank-list">
+              <li class="hand-rank-item">
+                <div class="hand-rank-name">皇家同花顺<span class="hand-rank-desc">最大的顺子同花：A K Q J 10</span></div>
+                <div class="hand-rank-cards">
+                  <PlayingCard v-for="c in HAND_EXAMPLES.royalFlush" :key="'rf'+c.rank" :card="c" :small="true" />
+                </div>
+              </li>
+              <li class="hand-rank-item">
+                <div class="hand-rank-name">同花顺<span class="hand-rank-desc">五张点数相连且同花</span></div>
+                <div class="hand-rank-cards">
+                  <PlayingCard v-for="c in HAND_EXAMPLES.straightFlush" :key="'sf'+c.rank" :card="c" :small="true" />
+                </div>
+              </li>
+              <li class="hand-rank-item">
+                <div class="hand-rank-name">四条<span class="hand-rank-desc">四张同点数 + 一张任意牌</span></div>
+                <div class="hand-rank-cards">
+                  <PlayingCard v-for="(c, i) in HAND_EXAMPLES.fourOfAKind" :key="'fk'+i" :card="c" :small="true" />
+                </div>
+              </li>
+              <li class="hand-rank-item">
+                <div class="hand-rank-name">葫芦<span class="hand-rank-desc">三条 + 一对</span></div>
+                <div class="hand-rank-cards">
+                  <PlayingCard v-for="(c, i) in HAND_EXAMPLES.fullHouse" :key="'fh'+i" :card="c" :small="true" />
+                </div>
+              </li>
+              <li class="hand-rank-item">
+                <div class="hand-rank-name">同花<span class="hand-rank-desc">五张相同花色</span></div>
+                <div class="hand-rank-cards">
+                  <PlayingCard v-for="(c, i) in HAND_EXAMPLES.flush" :key="'fl'+i" :card="c" :small="true" />
+                </div>
+              </li>
+              <li class="hand-rank-item">
+                <div class="hand-rank-name">顺子<span class="hand-rank-desc">五张点数相连（花色可不同）</span></div>
+                <div class="hand-rank-cards">
+                  <PlayingCard v-for="(c, i) in HAND_EXAMPLES.straight" :key="'st'+i" :card="c" :small="true" />
+                </div>
+              </li>
+              <li class="hand-rank-item">
+                <div class="hand-rank-name">三条<span class="hand-rank-desc">三张同点数 + 两张任意牌</span></div>
+                <div class="hand-rank-cards">
+                  <PlayingCard v-for="(c, i) in HAND_EXAMPLES.threeOfAKind" :key="'tk'+i" :card="c" :small="true" />
+                </div>
+              </li>
+              <li class="hand-rank-item">
+                <div class="hand-rank-name">两对<span class="hand-rank-desc">两对点数相同 + 一张任意牌</span></div>
+                <div class="hand-rank-cards">
+                  <PlayingCard v-for="(c, i) in HAND_EXAMPLES.twoPair" :key="'tp'+i" :card="c" :small="true" />
+                </div>
+              </li>
+              <li class="hand-rank-item">
+                <div class="hand-rank-name">一对<span class="hand-rank-desc">一对点数相同 + 三张任意牌</span></div>
+                <div class="hand-rank-cards">
+                  <PlayingCard v-for="(c, i) in HAND_EXAMPLES.onePair" :key="'op'+i" :card="c" :small="true" />
+                </div>
+              </li>
+              <li class="hand-rank-item">
+                <div class="hand-rank-name">高牌<span class="hand-rank-desc">以上牌型均未达成，比较最大单牌</span></div>
+                <div class="hand-rank-cards">
+                  <PlayingCard v-for="(c, i) in HAND_EXAMPLES.highCard" :key="'hc'+i" :card="c" :small="true" />
+                </div>
+              </li>
+            </ol>
+          </section>
+
+          <section class="rules-section">
+            <h3 class="rules-section-title">二、癞子玩法说明</h3>
+            <p class="rules-intro">癞子模式在标准 52 张牌基础上加入 <b>3 张癞子牌</b>（共 55 张）。癞子可替代指定范围内的任意牌，且会自动按最优结果匹配，无需手动指定替代。玩法与下注规则与经典模式一致。</p>
+
+            <div class="wild-cards-intro">
+              <div class="wild-card-item">
+                <PlayingCard :card="{ isWild: true, wildType: 'joker_small' }" :small="true" />
+                <div class="wild-card-name">小王</div>
+                <div class="wild-card-desc">可替代黑桃 / 梅花（黑色花色）的任意点数</div>
+              </div>
+              <div class="wild-card-item">
+                <PlayingCard :card="{ isWild: true, wildType: 'joker_big' }" :small="true" />
+                <div class="wild-card-name">大王</div>
+                <div class="wild-card-desc">可替代红桃 / 方块（红色花色）的任意点数</div>
+              </div>
+              <div class="wild-card-item">
+                <PlayingCard :card="{ isWild: true, wildType: 'universal' }" :small="true" />
+                <div class="wild-card-name">万能牌</div>
+                <div class="wild-card-desc">可替代任意花色、任意点数的牌</div>
+              </div>
+            </div>
+
+            <ul class="rules-list">
+              <li><b>比牌顺序：</b>先比牌型大小；牌型相同再比牌型主值；主值也相同则<b>使用癞子更少的一方更大</b>；仍相同则为平局。</li>
+              <li><b>同花限制：</b>在同花牌型中，癞子点数视为最小（小于 2）。</li>
+              <li><b>同花顺例外：</b>在同花顺 / 皇家同花顺牌型中，癞子可当作任意点数使用，不受“最小点数”限制。</li>
+              <li><b>选牌：</b>摊牌时从 2 张手牌 + 5 张公共牌（共 7 张）中<b>选出 5 张</b>参与比牌，服务端自动求出所选 5 张的最大合法牌型。</li>
+            </ul>
+
+            <div class="wild-example">
+              <div class="wild-example-title">替代示例</div>
+              <div class="wild-example-row">
+                <div class="wild-example-cards">
+                  <PlayingCard v-for="(c, i) in WILD_EXAMPLE.hand" :key="'we'+i" :card="c" :small="true" />
+                </div>
+                <div class="wild-example-note">
+                  万能牌补为 <span class="wild-example-arrow">→</span> 黑桃 A，与两张 A 组成 <b>三条 A</b>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+
     <div class="room-body">
       <div class="table-container">
-        <div class="poker-table">
+        <div class="poker-table" ref="tableRef" :style="tableTransformStyle">
           <div class="table-felt">
 
             <div class="table-center">
@@ -558,8 +693,110 @@ const props = defineProps({
   }
 })
 
+// 规则说明面板
+const rulesOpen = ref(false)
+
+function toggleRulesPanel() {
+  rulesOpen.value = !rulesOpen.value
+}
+
+// 牌型示例：rank 2-10 为点数，11=J，12=Q，13=K，14=A；suit 对应 ♠♥♦♣
+const HAND_EXAMPLES = {
+  royalFlush: [
+    { rank: 14, suit: 'spades' }, { rank: 13, suit: 'spades' },
+    { rank: 12, suit: 'spades' }, { rank: 11, suit: 'spades' }, { rank: 10, suit: 'spades' }
+  ],
+  straightFlush: [
+    { rank: 9, suit: 'hearts' }, { rank: 8, suit: 'hearts' },
+    { rank: 7, suit: 'hearts' }, { rank: 6, suit: 'hearts' }, { rank: 5, suit: 'hearts' }
+  ],
+  fourOfAKind: [
+    { rank: 14, suit: 'clubs' }, { rank: 14, suit: 'diamonds' },
+    { rank: 14, suit: 'hearts' }, { rank: 14, suit: 'spades' }, { rank: 13, suit: 'spades' }
+  ],
+  fullHouse: [
+    { rank: 13, suit: 'clubs' }, { rank: 13, suit: 'diamonds' },
+    { rank: 13, suit: 'hearts' }, { rank: 12, suit: 'spades' }, { rank: 12, suit: 'diamonds' }
+  ],
+  flush: [
+    { rank: 14, suit: 'diamonds' }, { rank: 11, suit: 'diamonds' },
+    { rank: 9, suit: 'diamonds' }, { rank: 6, suit: 'diamonds' }, { rank: 3, suit: 'diamonds' }
+  ],
+  straight: [
+    { rank: 10, suit: 'clubs' }, { rank: 9, suit: 'spades' },
+    { rank: 8, suit: 'hearts' }, { rank: 7, suit: 'diamonds' }, { rank: 6, suit: 'clubs' }
+  ],
+  threeOfAKind: [
+    { rank: 7, suit: 'clubs' }, { rank: 7, suit: 'diamonds' },
+    { rank: 7, suit: 'hearts' }, { rank: 13, suit: 'spades' }, { rank: 4, suit: 'clubs' }
+  ],
+  twoPair: [
+    { rank: 11, suit: 'clubs' }, { rank: 11, suit: 'diamonds' },
+    { rank: 4, suit: 'hearts' }, { rank: 4, suit: 'spades' }, { rank: 8, suit: 'clubs' }
+  ],
+  onePair: [
+    { rank: 12, suit: 'clubs' }, { rank: 12, suit: 'diamonds' },
+    { rank: 9, suit: 'spades' }, { rank: 5, suit: 'hearts' }, { rank: 3, suit: 'clubs' }
+  ],
+  highCard: [
+    { rank: 14, suit: 'clubs' }, { rank: 12, suit: 'hearts' },
+    { rank: 8, suit: 'diamonds' }, { rank: 5, suit: 'spades' }, { rank: 2, suit: 'clubs' }
+  ]
+}
+
+// 癞子替代示例：两张 A + 万能牌，万能牌替代为黑桃 A 组成三条 A
+const WILD_EXAMPLE = {
+  hand: [
+    { rank: 14, suit: 'hearts' }, { rank: 14, suit: 'diamonds' },
+    { isWild: true, wildType: 'universal' }, { rank: 5, suit: 'spades' }, { rank: 3, suit: 'clubs' }
+  ]
+}
+
 const router = useRouter()
 const appConfig = getClientConfig()
+
+// 桌面尺寸下的牌桌设计尺寸：座位均按此尺寸摆放，再按可用空间整体缩放，
+// 保证任意视口下底部玩家操作区都能完整展示且不被裁剪
+const TABLE_DESIGN_WIDTH = 1360
+const TABLE_DESIGN_HEIGHT = 760
+const tableRef = ref(null)
+const tableScale = ref(1)
+let tableResizeObserver = null
+
+const tableTransformStyle = computed(() => ({
+  transform: `scale(${tableScale.value})`
+}))
+
+function applyTableScale() {
+  const el = tableRef.value
+  const container = el?.parentElement
+  if (!el || !container) return
+  const cw = container.clientWidth
+  const ch = container.clientHeight
+  if (cw <= 0 || ch <= 0) return
+  const scale = Math.min(1, cw / TABLE_DESIGN_WIDTH, ch / TABLE_DESIGN_HEIGHT)
+  tableScale.value = Math.max(0.4, Math.round(scale * 1000) / 1000)
+}
+
+function initTableScale() {
+  applyTableScale()
+  const container = tableRef.value?.parentElement
+  if (container && typeof ResizeObserver !== 'undefined') {
+    tableResizeObserver = new ResizeObserver(() => applyTableScale())
+    tableResizeObserver.observe(container)
+  } else {
+    window.addEventListener('resize', applyTableScale)
+  }
+}
+
+function teardownTableScale() {
+  if (tableResizeObserver) {
+    tableResizeObserver.disconnect()
+    tableResizeObserver = null
+  } else {
+    window.removeEventListener('resize', applyTableScale)
+  }
+}
 
 const roomState = ref(null)
 const handState = ref(null)
@@ -601,7 +838,7 @@ const SETTLEMENT_CHIP_INTERVAL = 150
 const MAX_FLY_CHIPS_PER_COLUMN = 10
 
 const SEAT_POSITIONS = [
-  { top: '90%', left: '50%' },
+  { top: '82%', left: '50%' },
   { top: '60%', left: '8%' },
   { top: '23%', left: '8%' },
   { top: '-6%', left: '50%' },
@@ -1700,6 +1937,8 @@ function requestFullState() {
 onMounted(() => {
   const socket = getSocket()
 
+  initTableScale()
+
   socket.on('room_state', (state) => {
     roomState.value = state
     syncCountdown()
@@ -1771,6 +2010,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  teardownTableScale()
   stopCountdownTicker()
   stopSettlementTimer()
   const socket = getSocket()
@@ -1787,7 +2027,9 @@ onUnmounted(() => {
 
 <style scoped>
 .room-page {
-  min-height: 100vh;
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
   background: linear-gradient(180deg, #0a1510 0%, #122318 50%, #0a1510 100%);
   color: #e8e1c8;
   font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -1825,6 +2067,41 @@ onUnmounted(() => {
 
 .btn-back:hover {
   background: rgba(218, 165, 32, 0.2);
+}
+
+.btn-rules {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(90deg, #8b6914, #b8860b);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  color: #fff8e1;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-rules:hover {
+  background: linear-gradient(90deg, #a07a18, #daa520);
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15);
+}
+
+.btn-rules-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .room-id-label {
@@ -1880,6 +2157,288 @@ onUnmounted(() => {
   border-radius: 16px;
 }
 
+.rules-panel {
+  position: absolute;
+  top: 72px;
+  left: 20px;
+  width: min(620px, calc(100vw - 40px));
+  height: min(640px, calc(100vh - 96px));
+  z-index: 50;
+  background: rgba(6, 14, 20, 0.94);
+  border: 1px solid rgba(218, 165, 32, 0.4);
+  border-radius: 14px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.rules-panel-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.rules-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(218, 165, 32, 0.3);
+  background: rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
+}
+
+.rules-panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffd700;
+  letter-spacing: 1px;
+}
+
+.rules-panel-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8e1c8;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rules-panel-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.rules-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.rules-panel-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.rules-panel-body::-webkit-scrollbar-thumb {
+  background: rgba(218, 165, 32, 0.35);
+  border-radius: 999px;
+}
+
+.rules-section-title {
+  font-size: 15px;
+  color: #ffe7a1;
+  font-weight: 700;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed rgba(218, 165, 32, 0.25);
+  letter-spacing: 1px;
+}
+
+.hand-rank-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hand-rank-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.hand-rank-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffd700;
+}
+
+.hand-rank-desc {
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: 400;
+  color: #bda987;
+}
+
+.hand-rank-cards {
+  display: flex;
+  gap: 5px;
+}
+
+.hand-rank-cards :deep(.playing-card.card-small) {
+  width: 42px;
+  height: 58px;
+  border-radius: 6px;
+  cursor: default;
+}
+
+.hand-rank-cards :deep(.playing-card.card-small:hover) {
+  transform: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+}
+
+.hand-rank-cards :deep(.playing-card.card-small .card-corner-tl) {
+  top: 3px;
+  left: 4px;
+  font-size: 9px;
+}
+
+.hand-rank-cards :deep(.playing-card.card-small .card-corner-br) {
+  bottom: 3px;
+  right: 4px;
+  font-size: 9px;
+}
+
+.hand-rank-cards :deep(.playing-card.card-small .card-suit) {
+  font-size: 9px;
+}
+
+.rules-intro {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #d6cba9;
+}
+
+.rules-intro b {
+  color: #ffe7a1;
+}
+
+.wild-cards-intro {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 12px 0 4px;
+}
+
+.wild-card-item {
+  flex: 1 1 160px;
+  max-width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+
+.wild-card-item :deep(.playing-card.card-small) {
+  width: 48px;
+  height: 66px;
+  border-radius: 7px;
+  cursor: default;
+}
+
+.wild-card-item :deep(.playing-card.card-small:hover) {
+  transform: none;
+}
+
+.wild-card-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffe7a1;
+}
+
+.wild-card-desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #bda987;
+}
+
+.rules-list {
+  margin: 12px 0 4px;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #d6cba9;
+}
+
+.rules-list li::marker {
+  color: #ffd700;
+}
+
+.rules-list b {
+  color: #ffe7a1;
+}
+
+.wild-example {
+  margin-top: 6px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(139, 105, 20, 0.12);
+  border: 1px solid rgba(218, 165, 32, 0.3);
+}
+
+.wild-example-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffd700;
+  margin-bottom: 8px;
+}
+
+.wild-example-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.wild-example-cards {
+  display: flex;
+  gap: 5px;
+}
+
+.wild-example-cards :deep(.playing-card.card-small) {
+  width: 42px;
+  height: 58px;
+  border-radius: 6px;
+  cursor: default;
+}
+
+.wild-example-cards :deep(.playing-card.card-small:hover) {
+  transform: none;
+}
+
+.wild-example-note {
+  flex: 1;
+  min-width: 200px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #d6cba9;
+}
+
+.wild-example-note b {
+  color: #ffe7a1;
+}
+
+.wild-example-arrow {
+  color: #ffd700;
+  font-weight: 700;
+}
+
 .room-body {
   flex: 1;
   display: flex;
@@ -1895,18 +2454,16 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   min-height: 0;
-  overflow: visible;
 }
 
 .poker-table {
-  width: 100%;
-  max-width: 1360px;
-  height: 100%;
-  max-height: 760px;
-  aspect-ratio: 16 / 10.8;
+  width: 1360px;
+  height: 760px;
+  flex-shrink: 0;
   position: relative;
   padding: 20px 26px;
   box-sizing: border-box;
+  transform-origin: center center;
 }
 
 .table-felt {
@@ -2667,15 +3224,16 @@ onUnmounted(() => {
 }
 
 .hand-cards-self {
-  align-items: flex-end;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
   min-height: 68px;
-  margin-top: auto;
 }
 
 .own-card-wrap {
   position: relative;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   transition: transform 0.18s ease;
 }
